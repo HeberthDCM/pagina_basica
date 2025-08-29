@@ -3,7 +3,6 @@ let cursos = [];
 let estudiantes = [];
 let codigoIngresado = '';
 let cursoSeleccionado = null;
-let registrosAsistencia = [];
 
 // Función para formatear números con dos dígitos
 function formatearDosDigitos(numero) {
@@ -101,9 +100,6 @@ async function cargarDatosExcel() {
         
         console.log('Datos cargados:', { cursos, estudiantes });
         
-        // Cargar asistencias existentes desde localStorage
-        cargarAsistenciasDesdeStorage();
-        
         // Llenar el selector de cursos
         llenarSelectorCursos();
         
@@ -111,21 +107,6 @@ async function cargarDatosExcel() {
         console.error('Error al cargar los archivos Excel:', error);
         mostrarMensaje('Error al cargar los datos. Asegúrese de que los archivos existan.', 'error');
     }
-}
-
-// Función para cargar asistencias desde localStorage
-function cargarAsistenciasDesdeStorage() {
-    const asistenciasGuardadas = localStorage.getItem('registrosAsistencia');
-    if (asistenciasGuardadas) {
-        registrosAsistencia = JSON.parse(asistenciasGuardadas);
-        console.log('Asistencias cargadas desde localStorage:', registrosAsistencia.length);
-    }
-}
-
-// Función para guardar asistencias en localStorage
-function guardarAsistenciasEnStorage() {
-    localStorage.setItem('registrosAsistencia', JSON.stringify(registrosAsistencia));
-    console.log('Asistencias guardadas en localStorage:', registrosAsistencia.length);
 }
 
 // Función para convertir diferentes formatos de hora a string
@@ -252,95 +233,39 @@ async function registrarAsistencia() {
         Apellidos: estudiante.Apellidos
     };
     
-    // Guardar en el almacenamiento local
+    // Guardar en el archivo de asistencia
     try {
-        guardarAsistencia(registroAsistencia);
+        const respuesta = await fetch('http://localhost:3000/guardar-asistencia', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(registroAsistencia)
+        });
         
-        // Mostrar mensaje de éxito
-        mostrarMensaje(`¡Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}! (${estado})`, 'exito');
+        const resultado = await respuesta.json();
         
-        // Mostrar fotografía
-        mostrarFotoEstudiante(estudiante.CodigoEstudiante);
-        
-        // Preparar para siguiente registro después de un tiempo
-        setTimeout(() => {
-            codigoIngresado = '';
-            actualizarDisplayCodigo();
-            ocultarMensaje();
-            ocultarFoto();
-        }, 4000);
+        if (resultado.success) {
+            // Mostrar mensaje de éxito
+            mostrarMensaje(`¡Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}! (${estado})`, 'exito');
+            
+            // Mostrar fotografía
+            mostrarFotoEstudiante(estudiante.CodigoEstudiante);
+            
+            // Preparar para siguiente registro después de un tiempo
+            setTimeout(() => {
+                codigoIngresado = '';
+                actualizarDisplayCodigo();
+                ocultarMensaje();
+                ocultarFoto();
+            }, 4000);
+        } else {
+            throw new Error(resultado.message);
+        }
         
     } catch (error) {
         console.error('Error al guardar la asistencia:', error);
-        mostrarMensaje('Error al registrar la asistencia.', 'error');
-    }
-}
-
-// Función para guardar asistencia
-function guardarAsistencia(nuevoRegistro) {
-    // Agregar el nuevo registro al array
-    registrosAsistencia.push(nuevoRegistro);
-    
-    // Guardar en localStorage
-    guardarAsistenciasEnStorage();
-    
-    console.log('Asistencia registrada:', nuevoRegistro);
-    console.log('Total de asistencias:', registrosAsistencia.length);
-    
-    return true;
-}
-
-// Función para exportar todas las asistencias a Excel
-function exportarAsistenciasAExcel() {
-    if (registrosAsistencia.length === 0) {
-        mostrarMensaje('No hay asistencias para exportar.', 'error');
-        return;
-    }
-    
-    try {
-        // Crear workbook
-        const workbook = XLSX.utils.book_new();
-        
-        // Convertir datos a hoja de cálculo
-        const worksheet = XLSX.utils.json_to_sheet(registrosAsistencia);
-        
-        // Agregar hoja al workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Asistencia');
-        
-        // Generar archivo Excel
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        
-        // Descargar el archivo
-        guardarArchivoExcel(excelBuffer, 'Asistencia.xlsx');
-        
-        mostrarMensaje(`Asistencias exportadas correctamente (${registrosAsistencia.length} registros)`, 'exito');
-        
-    } catch (error) {
-        console.error('Error al exportar asistencias:', error);
-        mostrarMensaje('Error al exportar asistencias.', 'error');
-    }
-}
-
-// Función para guardar el archivo Excel
-function guardarArchivoExcel(buffer, nombreArchivo) {
-    try {
-        const blob = new Blob([buffer], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const enlace = document.createElement('a');
-        
-        enlace.href = url;
-        enlace.download = nombreArchivo;
-        document.body.appendChild(enlace);
-        enlace.click();
-        
-        // Limpiar
-        setTimeout(() => {
-            document.body.removeChild(enlace);
-            URL.revokeObjectURL(url);
-        }, 100);
-    } catch (error) {
-        console.error('Error al guardar archivo:', error);
-        throw error;
+        mostrarMensaje('Error al registrar la asistencia. Verifique que el servidor esté ejecutándose.', 'error');
     }
 }
 
@@ -455,17 +380,6 @@ function crearTecladoNumerico() {
     botonRegistrar.textContent = 'Registrar';
     botonRegistrar.onclick = registrarAsistencia;
     teclado.appendChild(botonRegistrar);
-    
-    // Botón para exportar Excel
-    const botonExportar = document.createElement('button');
-    botonExportar.className = 'tecla tecla-exportar';
-    botonExportar.textContent = 'Exportar';
-    botonExportar.onclick = exportarAsistenciasAExcel;
-    botonExportar.style.gridColumn = 'span 3';
-    botonExportar.style.marginTop = '10px';
-    botonExportar.style.backgroundColor = '#27ae60';
-    botonExportar.style.color = 'white';
-    teclado.appendChild(botonExportar);
     
     console.log('Teclado numérico creado con éxito');
 }
