@@ -21,6 +21,11 @@ app.post('/guardar-asistencia', (req, res) => {
         const nuevaAsistencia = req.body;
         const filePath = path.join(__dirname, 'data', 'Asistencia.xlsx');
         
+        // Crear carpeta data si no existe
+        if (!fs.existsSync(path.dirname(filePath))) {
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+        }
+        
         let workbook;
         let worksheet;
         let datos = [];
@@ -80,7 +85,13 @@ app.get('/obtener-asistencias', (req, res) => {
     }
 });
 
+// Ruta principal - servir el archivo index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+    console.log(`Desde tu navegador, ve a: http://localhost:${PORT}`);
 });
