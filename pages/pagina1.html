@@ -1,20 +1,31 @@
 <div class="page-content">
-    <h1>Página 1</h1>
-    <p>Este es el contenido de la página 1.</p>
+    <h1>Sistema de Registro de Asistencia</h1>
     
     <!-- Reloj digital -->
     <div class="reloj-container">
         <div class="reloj-digital">
             <div id="hora-actual">00:00:00</div>
-
-
-
             <div id="fecha-actual">Lunes, 1 de enero de 2023</div>
-
+        </div>
     </div>
     
-    <div class="feature">
-        <button id="btn-saludo">Saludar</button>
-        <p id="mensaje"></p>
+    <!-- Selector de curso -->
+    <div class="curso-selector">
+        <label for="selector-curso">Seleccione el curso:</label>
+        <select id="selector-curso">
+            <option value="">Seleccione un curso</option>
+        </select>
+    </div>
+    
+    <!-- Display del código ingresado -->
+    <div class="codigo-display" id="display-codigo"></div>
+    
+    <!-- Teclado numérico -->
+    <div class="teclado-numerico" id="teclado-numerico"></div>
+    
+    <!-- Mensaje de resultado -->
+    <div class="mensaje-resultado" id="mensaje-resultado">
+        <p id="texto-mensaje"></p>
+        <img class="foto-estudiante" id="foto-estudiante" style="display:none;" alt="Foto del estudiante">
     </div>
 </div>
