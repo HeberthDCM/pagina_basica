@@ -3,6 +3,7 @@ let cursos = [];
 let estudiantes = [];
 let codigoIngresado = '';
 let cursoSeleccionado = null;
+let registrosAsistencia = [];
 
 // Función para formatear números con dos dígitos
 function formatearDosDigitos(numero) {
@@ -80,6 +81,16 @@ async function cargarDatosExcel() {
         const worksheetCursos = workbookCursos.Sheets[primeraHojaCursos];
         cursos = XLSX.utils.sheet_to_json(worksheetCursos);
         
+        // Convertir las horas de los cursos a formato string
+        cursos = cursos.map(curso => {
+            return {
+                ...curso,
+                HoraInicio: convertirHoraAString(curso.HoraInicio),
+                HoraTolerancia: convertirHoraAString(curso.HoraTolerancia),
+                HoraTardanza: convertirHoraAString(curso.HoraTardanza)
+            };
+        });
+        
         // Cargar estudiantes
         const respuestaEstudiantes = await fetch('data/Estudiantes.xlsx');
         const arrayBufferEstudiantes = await respuestaEstudiantes.arrayBuffer();
@@ -90,6 +101,9 @@ async function cargarDatosExcel() {
         
         console.log('Datos cargados:', { cursos, estudiantes });
         
+        // Cargar asistencias existentes desde localStorage
+        cargarAsistenciasDesdeStorage();
+        
         // Llenar el selector de cursos
         llenarSelectorCursos();
         
@@ -97,6 +111,48 @@ async function cargarDatosExcel() {
         console.error('Error al cargar los archivos Excel:', error);
         mostrarMensaje('Error al cargar los datos. Asegúrese de que los archivos existan.', 'error');
     }
+}
+
+// Función para cargar asistencias desde localStorage
+function cargarAsistenciasDesdeStorage() {
+    const asistenciasGuardadas = localStorage.getItem('registrosAsistencia');
+    if (asistenciasGuardadas) {
+        registrosAsistencia = JSON.parse(asistenciasGuardadas);
+        console.log('Asistencias cargadas desde localStorage:', registrosAsistencia.length);
+    }
+}
+
+// Función para guardar asistencias en localStorage
+function guardarAsistenciasEnStorage() {
+    localStorage.setItem('registrosAsistencia', JSON.stringify(registrosAsistencia));
+    console.log('Asistencias guardadas en localStorage:', registrosAsistencia.length);
+}
+
+// Función para convertir diferentes formatos de hora a string
+function convertirHoraAString(hora) {
+    if (typeof hora === 'string') {
+        return hora; // Ya es string, devolver tal cual
+    } else if (typeof hora === 'number') {
+        // Es un número de Excel (fracción de día)
+        return convertirNumeroExcelAHora(hora);
+    } else if (hora instanceof Date) {
+        // Es un objeto Date
+        return formatearDosDigitos(hora.getHours()) + ':' + formatearDosDigitos(hora.getMinutes());
+    } else {
+        // Formato desconocido, devolver valor por defecto
+        console.warn('Formato de hora desconocido:', hora);
+        return '08:00';
+    }
+}
+
+// Función para convertir número de Excel a formato de hora
+function convertirNumeroExcelAHora(numeroExcel) {
+    // En Excel, 1 = 24 horas, 0.5 = 12 horas, etc.
+    const totalMinutos = Math.round(numeroExcel * 24 * 60);
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+    
+    return formatearDosDigitos(horas) + ':' + formatearDosDigitos(minutos);
 }
 
 // Función para llenar el selector de cursos
@@ -134,15 +190,12 @@ function llenarSelectorCursos() {
 // Función para agregar un número al código
 function agregarNumero(numero) {
     codigoIngresado += numero;
-    console.log("digito",codigoIngresado);
     actualizarDisplayCodigo();
-    
 }
 
 // Función para borrar el código
 function borrarCodigo() {
     codigoIngresado = '';
-    console.log("Borrar codigo","1");
     actualizarDisplayCodigo();
 }
 
@@ -152,14 +205,12 @@ function actualizarDisplayCodigo() {
     if (display) {
         display.textContent = codigoIngresado || '---';
     }
-    console.log("digitoactualizar","2");
 }
 
 // Función para registrar asistencia
 async function registrarAsistencia() {
     if (!cursoSeleccionado) {
         mostrarMensaje('Por favor, seleccione un curso primero.', 'error');
-        alert("1");
         return;
     }
     
@@ -168,7 +219,6 @@ async function registrarAsistencia() {
         return;
     }
     
-    console.log("Codigo ingresado",codigoIngresado);
     // Buscar estudiante
     const estudiante = estudiantes.find(e => e.CodigoEstudiante == codigoIngresado);
     
@@ -176,21 +226,19 @@ async function registrarAsistencia() {
         mostrarMensaje('Código de estudiante no encontrado.', 'error');
         return;
     }
-
+    
     // Obtener fecha y hora actual
     const ahora = new Date();
     const fechaMarca = ahora.toISOString().split('T')[0]; // Formato YYYY-MM-DD
     const horaMarca = ahora.toTimeString().split(' ')[0]; // Formato HH:MM:SS
-    console.log("Hora1",ahora);
-    console.log("Hora2",fechaMarca);
-    console.log("Hora3",horaMarca);
+    
     // Verificar si es tardanza
-
-
-
-
-    const estado = calcularEstadoAsistencia(horaMarca, cursoSeleccionado.HoraInicio, 
-                                          cursoSeleccionado.HoraTolerancia, cursoSeleccionado.HoraTardanza);
+    const estado = calcularEstadoAsistencia(
+        horaMarca, 
+        cursoSeleccionado.HoraInicio, 
+        cursoSeleccionado.HoraTolerancia, 
+        cursoSeleccionado.HoraTardanza
+    );
     
     // Crear objeto de asistencia
     const registroAsistencia = {
@@ -199,31 +247,112 @@ async function registrarAsistencia() {
         FechaMarca: fechaMarca,
         HoraMarca: horaMarca,
         NombreCurso: cursoSeleccionado.NombreCurso,
-        Estado: estado
-
+        Estado: estado,
+        Nombres: estudiante.Nombres,
+        Apellidos: estudiante.Apellidos
     };
-    console.log("Registro",registroAsistencia);
     
-    // Mostrar mensaje de éxito
-    mostrarMensaje(`¡Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}! (${estado})`, 'exito');
+    // Guardar en el almacenamiento local
+    try {
+        guardarAsistencia(registroAsistencia);
+        
+        // Mostrar mensaje de éxito
+        mostrarMensaje(`¡Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}! (${estado})`, 'exito');
+        
+        // Mostrar fotografía
+        mostrarFotoEstudiante(estudiante.CodigoEstudiante);
+        
+        // Preparar para siguiente registro después de un tiempo
+        setTimeout(() => {
+            codigoIngresado = '';
+            actualizarDisplayCodigo();
+            ocultarMensaje();
+            ocultarFoto();
+        }, 4000);
+        
+    } catch (error) {
+        console.error('Error al guardar la asistencia:', error);
+        mostrarMensaje('Error al registrar la asistencia.', 'error');
+    }
+}
+
+// Función para guardar asistencia
+function guardarAsistencia(nuevoRegistro) {
+    // Agregar el nuevo registro al array
+    registrosAsistencia.push(nuevoRegistro);
     
-    // Mostrar fotografía
-    mostrarFotoEstudiante(estudiante.CodigoEstudiante);
+    // Guardar en localStorage
+    guardarAsistenciasEnStorage();
     
-    // Simular guardado en Excel (en un caso real se enviaría a un backend)
-    console.log('Registro de asistencia:', registroAsistencia);
+    console.log('Asistencia registrada:', nuevoRegistro);
+    console.log('Total de asistencias:', registrosAsistencia.length);
     
-    // Preparar para siguiente registro después de un tiempo
-    setTimeout(() => {
-        codigoIngresado = '';
-        actualizarDisplayCodigo();
-        ocultarMensaje();
-        ocultarFoto();
-    }, 4000);
+    return true;
+}
+
+// Función para exportar todas las asistencias a Excel
+function exportarAsistenciasAExcel() {
+    if (registrosAsistencia.length === 0) {
+        mostrarMensaje('No hay asistencias para exportar.', 'error');
+        return;
+    }
+    
+    try {
+        // Crear workbook
+        const workbook = XLSX.utils.book_new();
+        
+        // Convertir datos a hoja de cálculo
+        const worksheet = XLSX.utils.json_to_sheet(registrosAsistencia);
+        
+        // Agregar hoja al workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Asistencia');
+        
+        // Generar archivo Excel
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        
+        // Descargar el archivo
+        guardarArchivoExcel(excelBuffer, 'Asistencia.xlsx');
+        
+        mostrarMensaje(`Asistencias exportadas correctamente (${registrosAsistencia.length} registros)`, 'exito');
+        
+    } catch (error) {
+        console.error('Error al exportar asistencias:', error);
+        mostrarMensaje('Error al exportar asistencias.', 'error');
+    }
+}
+
+// Función para guardar el archivo Excel
+function guardarArchivoExcel(buffer, nombreArchivo) {
+    try {
+        const blob = new Blob([buffer], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const enlace = document.createElement('a');
+        
+        enlace.href = url;
+        enlace.download = nombreArchivo;
+        document.body.appendChild(enlace);
+        enlace.click();
+        
+        // Limpiar
+        setTimeout(() => {
+            document.body.removeChild(enlace);
+            URL.revokeObjectURL(url);
+        }, 100);
+    } catch (error) {
+        console.error('Error al guardar archivo:', error);
+        throw error;
+    }
 }
 
 // Función para calcular el estado de asistencia
 function calcularEstadoAsistencia(horaMarca, horaInicio, horaTolerancia, horaTardanza) {
+    // Asegurarse de que todas las horas sean strings
+    horaInicio = convertirHoraAString(horaInicio);
+    horaTolerancia = convertirHoraAString(horaTolerancia);
+    horaTardanza = convertirHoraAString(horaTardanza);
+    
+    console.log('Comparando horas:', { horaMarca, horaInicio, horaTolerancia, horaTardanza });
+    
     // Convertir a minutos para facilitar comparación
     const [hMarca, mMarca] = horaMarca.split(':').map(Number);
     const minutosMarca = hMarca * 60 + mMarca;
@@ -273,6 +402,7 @@ function mostrarFotoEstudiante(codigoEstudiante) {
         // Manejar error si la imagen no existe
         fotoDiv.onerror = function() {
             this.style.display = 'none';
+            console.log('No se pudo cargar la imagen para el código:', codigoEstudiante);
         };
     }
 }
@@ -325,6 +455,17 @@ function crearTecladoNumerico() {
     botonRegistrar.textContent = 'Registrar';
     botonRegistrar.onclick = registrarAsistencia;
     teclado.appendChild(botonRegistrar);
+    
+    // Botón para exportar Excel
+    const botonExportar = document.createElement('button');
+    botonExportar.className = 'tecla tecla-exportar';
+    botonExportar.textContent = 'Exportar';
+    botonExportar.onclick = exportarAsistenciasAExcel;
+    botonExportar.style.gridColumn = 'span 3';
+    botonExportar.style.marginTop = '10px';
+    botonExportar.style.backgroundColor = '#27ae60';
+    botonExportar.style.color = 'white';
+    teclado.appendChild(botonExportar);
     
     console.log('Teclado numérico creado con éxito');
 }
