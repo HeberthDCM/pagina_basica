@@ -1,0 +1,93 @@
+:root{
+    --color-fondo: rgb(12,12,12);
+    --color-texto: rgb(0,0,0);
+    --color-texto-menu: rgb(134,136,144);
+    --color-boton:rgb(0,0,0);
+    --color-boton-texto: rgb(255,255,255);
+    --color-menu-hover: rgb(238,238,238);
+    --color-menu-hover-texto: rgb(0,0,0);
+    --color-fondo-reloj: rgb(22,22,22);
+}
+.dark-mode{
+    --color-fondo: rgb(250,250,250);
+    --color-texto: rgb(255,255,255);
+    --color-texto-menu: rgb(110,110,117);
+    --color-boton:rgb(255,255,255);
+    --color-boton-texto: rgb(0,0,0);
+    --color-menu-hover: rgb(0,0,0);
+    --color-menu-hover-texto: rgb(238,238,238);
+    --color-fondo-reloj: rgb(134,134,134);
+}
+
+
+body1 {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #121212;
+    font-family: 'Segment7', 'Arial', sans-serif;
+}
+
+.reloj-container {
+    justify-content: center;
+    margin-left: 10px;
+    margin-right: 20px;
+    text-align: center;
+    background-color: var(--color-fondo-reloj);
+    padding: 10px;
+    border-radius: 15px;
+    /* box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); */
+    border: 0px solid var(--color-fondo-reloj);
+}
+
+.reloj-digital {
+    justify-content: center;
+    font-size: 5rem;
+    color: var(--color-boton-texto);
+    /* text-shadow: 0 0 10px rgba(0, 255, 255, 0.7); */
+    display: flex;
+    align-items: baseline;
+}
+
+.separador {
+    margin: 0 5px;
+    animation: parpadeo 1s infinite;
+}
+
+@keyframes parpadeo {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.hora, .minuto, .segundo {
+    background-color: var(--color-boton);
+    padding: 0 15px;
+    border-radius: 8px;
+    margin: 0 2px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.ampm {
+    font-size: 2rem;
+    margin-left: 10px;
+    align-self: center;
+    color:var(--color-boton-texto);
+}
+
+.fecha {
+    margin-top: 20px;
+    font-size: 1.5rem;
+    color:var(--color-boton-texto);
+    font-family: 'Arial', sans-serif;
+}
+
+/* Fuente digital (opcional) */
+@font-face {
+    font-family: 'Segment7';
+    src: url('https://assets.codepen.io/417525/Segment7Standard.woff2') format('woff2');
+    font-weight: normal;
+    font-style: italic;
+}

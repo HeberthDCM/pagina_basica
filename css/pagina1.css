@@ -1,0 +1,83 @@
+.page-content h1 {
+    color: #3498db;
+    margin-bottom: 20px;
+}
+
+.page-content p {
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+/* Estilos para el reloj digital */
+.reloj-container {
+    display: flex;
+    justify-content: center;
+    margin: 25px 0;
+}
+
+.reloj-digital {
+    background-color: #000;
+    color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    min-width: 300px;
+}
+
+#hora-actual {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    letter-spacing: 2px;
+}
+
+#fecha-actual {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.feature {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #e8f4fc;
+    border-radius: 5px;
+    border-left: 4px solid #3498db;
+}
+
+#btn-saludo {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#btn-saludo:hover {
+    background-color: #2980b9;
+}
+
+#mensaje {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* Media query para responsividad del reloj */
+@media (max-width: 480px) {
+    .reloj-digital {
+        min-width: 250px;
+        padding: 15px;
+    }
+    
+    #hora-actual {
+        font-size: 2rem;
+    }
+    
+    #fecha-actual {
+        font-size: 1rem;
+    }
+}

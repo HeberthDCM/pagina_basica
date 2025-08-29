@@ -1,0 +1,55 @@
+.page-content h1 {
+    color: #e74c3c;
+    margin-bottom: 20px;
+}
+
+.page-content p {
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: #7f8c8d;
+}
+
+.counter {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #fbebea;
+    border-radius: 5px;
+    border-left: 4px solid #e74c3c;
+}
+
+.counter p {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+#contador {
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+button {
+    padding: 8px 12px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#btn-incrementar {
+    background-color: #2ecc71;
+    color: white;
+}
+
+#btn-incrementar:hover {
+    background-color: #27ae60;
+}
+
+#btn-disminuir {
+    background-color: #e74c3c;
+    color: white;
+}
+
+#btn-disminuir:hover {
+    background-color: #c0392b;
+}

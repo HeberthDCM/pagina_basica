@@ -1,0 +1,26 @@
+.page-content h1 {
+    color: #9b59b6;
+    margin-bottom: 20px;
+}
+
+.page-content p {
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.color-changer {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f5eef8;
+    border-radius: 5px;
+    border-left: 4px solid #9b59b6;
+}
+
+#selector-color {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
+}
