@@ -61,52 +61,6 @@
     max-width: 400px;
 }
 
-/* Teclado numérico */
-.teclado-numerico {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    max-width: 300px;
-    margin: 0 auto 20px;
-}
-
-.tecla {
-    background-color: white;
-    border: 2px solid #2c3e50;
-    border-radius: 5px;
-    padding: 15px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-align: center;
-}
-
-.tecla:hover {
-    background-color: #ffeaa7;
-    border-color: #fdcb6e;
-}
-
-.tecla:active {
-    transform: scale(0.95);
-}
-
-.tecla-borrar {
-    background-color: #ff7675;
-    color: white;
-}
-
-.tecla-registrar {
-    background-color: #2c3e50;
-    color: #ffeaa7;
-    grid-column: span 2;
-}
-
-.tecla-registrar:hover {
-    background-color: #ffeaa7;
-    color: #2c3e50;
-}
-
 /* Display del código */
 .codigo-display {
     text-align: center;
@@ -175,5 +129,106 @@
     .tecla {
         padding: 12px;
         font-size: 1rem;
+    }
+}
+/* Teclado numérico */
+.teclado-numerico {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 300px;
+    margin: 0 auto 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tecla {
+    background-color: white;
+    border: 2px solid #2c3e50;
+    border-radius: 5px;
+    padding: 15px 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tecla:hover {
+    background-color: #ffeaa7;
+    border-color: #fdcb6e;
+    transform: translateY(-2px);
+}
+
+.tecla:active {
+    background-color: #fdcb6e;
+    transform: translateY(0);
+}
+
+.tecla-borrar {
+    background-color: #ff7675;
+    color: white;
+    border-color: #d63031;
+    font-size: 1rem;
+}
+
+.tecla-borrar:hover {
+    background-color: #ff5e57;
+    border-color: #d63031;
+}
+
+.tecla-registrar {
+    background-color: #2c3e50;
+    color: #ffeaa7;
+    grid-column: span 2;
+    font-size: 1rem;
+    border-color: #2c3e50;
+}
+
+.tecla-registrar:hover {
+    background-color: #ffeaa7;
+    color: #2c3e50;
+    border-color: #fdcb6e;
+}
+
+.tecla-registrar:active {
+    background-color: #fdcb6e;
+    color: #2c3e50;
+    animation: desaparecer 0.5s forwards;
+}
+
+@keyframes desaparecer {
+    0% {
+        background-color: #fdcb6e;
+        color: #2c3e50;
+    }
+    100% {
+        background-color: #2c3e50;
+        color: #ffeaa7;
+    }
+}
+
+/* Media query para responsividad */
+@media (max-width: 480px) {
+    .teclado-numerico {
+        max-width: 250px;
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .tecla {
+        padding: 12px 0;
+        font-size: 1.2rem;
+        min-height: 45px;
+    }
+    
+    .tecla-borrar, .tecla-registrar {
+        font-size: 0.9rem;
     }
 }

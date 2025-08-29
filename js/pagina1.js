@@ -60,6 +60,8 @@ function actualizarReloj() {
 
 // Función para iniciar el reloj
 function iniciarReloj() {
+    console.log("Reloj iniciado");
+    
     // Actualizar inmediatamente
     actualizarReloj();
     
@@ -86,6 +88,8 @@ async function cargarDatosExcel() {
         const worksheetEstudiantes = workbookEstudiantes.Sheets[primeraHojaEstudiantes];
         estudiantes = XLSX.utils.sheet_to_json(worksheetEstudiantes);
         
+        console.log('Datos cargados:', { cursos, estudiantes });
+        
         // Llenar el selector de cursos
         llenarSelectorCursos();
         
@@ -98,7 +102,10 @@ async function cargarDatosExcel() {
 // Función para llenar el selector de cursos
 function llenarSelectorCursos() {
     const selector = document.getElementById('selector-curso');
-    if (!selector) return;
+    if (!selector) {
+        console.error('No se encontró el selector de cursos');
+        return;
+    }
     
     // Limpiar selector
     selector.innerHTML = '<option value="">Seleccione un curso</option>';
@@ -108,12 +115,19 @@ function llenarSelectorCursos() {
         const option = document.createElement('option');
         option.value = curso.CodigoCurso;
         option.textContent = `${curso.NombreCurso} - Clase ${curso.NumeroClase}`;
+        option.setAttribute('data-curso', JSON.stringify(curso));
         selector.appendChild(option);
     });
     
     // Establecer el evento change
     selector.addEventListener('change', function() {
-        cursoSeleccionado = cursos.find(c => c.CodigoCurso === this.value);
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            cursoSeleccionado = JSON.parse(selectedOption.getAttribute('data-curso'));
+            console.log('Curso seleccionado:', cursoSeleccionado);
+        } else {
+            cursoSeleccionado = null;
+        }
     });
 }
 
@@ -133,7 +147,7 @@ function borrarCodigo() {
 function actualizarDisplayCodigo() {
     const display = document.getElementById('display-codigo');
     if (display) {
-        display.textContent = codigoIngresado;
+        display.textContent = codigoIngresado || '---';
     }
 }
 
@@ -163,9 +177,8 @@ async function registrarAsistencia() {
     const horaMarca = ahora.toTimeString().split(' ')[0]; // Formato HH:MM:SS
     
     // Verificar si es tardanza
-    const horaInicio = cursoSeleccionado.HoraInicio;
-    const horaTolerancia = cursoSeleccionado.HoraTolerancia;
-    const horaTardanza = cursoSeleccionado.HoraTardanza;
+    const estado = calcularEstadoAsistencia(horaMarca, cursoSeleccionado.HoraInicio, 
+                                          cursoSeleccionado.HoraTolerancia, cursoSeleccionado.HoraTardanza);
     
     // Crear objeto de asistencia
     const registroAsistencia = {
@@ -174,86 +187,45 @@ async function registrarAsistencia() {
         FechaMarca: fechaMarca,
         HoraMarca: horaMarca,
         NombreCurso: cursoSeleccionado.NombreCurso,
-        Estado: calcularEstadoAsistencia(horaMarca, horaInicio, horaTolerancia, horaTardanza)
+        Estado: estado
     };
     
-    // Guardar en el archivo de asistencia
-    try {
-        await guardarAsistencia(registroAsistencia);
-        
-        // Mostrar mensaje de éxito
-        mostrarMensaje(`Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}`, 'exito');
-        
-        // Mostrar fotografía
-        mostrarFotoEstudiante(estudiante.CodigoEstudiante);
-        
-        // Preparar para siguiente registro después de un tiempo
-        setTimeout(() => {
-            codigoIngresado = '';
-            actualizarDisplayCodigo();
-            ocultarMensaje();
-            ocultarFoto();
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Error al guardar la asistencia:', error);
-        mostrarMensaje('Error al registrar la asistencia.', 'error');
-    }
+    // Mostrar mensaje de éxito
+    mostrarMensaje(`¡Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}! (${estado})`, 'exito');
+    
+    // Mostrar fotografía
+    mostrarFotoEstudiante(estudiante.CodigoEstudiante);
+    
+    // Simular guardado en Excel (en un caso real se enviaría a un backend)
+    console.log('Registro de asistencia:', registroAsistencia);
+    
+    // Preparar para siguiente registro después de un tiempo
+    setTimeout(() => {
+        codigoIngresado = '';
+        actualizarDisplayCodigo();
+        ocultarMensaje();
+        ocultarFoto();
+    }, 4000);
 }
 
 // Función para calcular el estado de asistencia
 function calcularEstadoAsistencia(horaMarca, horaInicio, horaTolerancia, horaTardanza) {
-    const marca = new Date(`2000-01-01T${horaMarca}`);
-    const inicio = new Date(`2000-01-01T${horaInicio}`);
-    const tolerancia = new Date(`2000-01-01T${horaTolerancia}`);
-    const tardanza = new Date(`2000-01-01T${horaTardanza}`);
+    // Convertir a minutos para facilitar comparación
+    const [hMarca, mMarca] = horaMarca.split(':').map(Number);
+    const minutosMarca = hMarca * 60 + mMarca;
     
-    if (marca <= tolerancia) return 'Puntual';
-    if (marca <= tardanza) return 'Tardanza';
+    const [hInicio, mInicio] = horaInicio.split(':').map(Number);
+    const minutosInicio = hInicio * 60 + mInicio;
+    
+    const [hTolerancia, mTolerancia] = horaTolerancia.split(':').map(Number);
+    const minutosTolerancia = hTolerancia * 60 + mTolerancia;
+    
+    const [hTardanza, mTardanza] = horaTardanza.split(':').map(Number);
+    const minutosTardanza = hTardanza * 60 + mTardanza;
+    
+    if (minutosMarca <= minutosTolerancia) return 'Puntual';
+    if (minutosMarca <= minutosTardanza) return 'Tardanza';
     return 'Ausente';
-}
-
-// Función para guardar asistencia en Excel
-async function guardarAsistencia(registro) {
-    try {
-        // Cargar archivo existente o crear uno nuevo
-        let workbook;
-        let worksheet;
-        let datosExistentes = [];
-        
-        try {
-            const respuesta = await fetch('data/Asistencia.xlsx');
-            const arrayBuffer = await respuesta.arrayBuffer();
-            workbook = XLSX.read(arrayBuffer);
-            worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            datosExistentes = XLSX.utils.sheet_to_json(worksheet);
-        } catch (error) {
-            // Si el archivo no existe, crear uno nuevo
-            workbook = XLSX.utils.book_new();
-            worksheet = XLSX.utils.json_to_sheet([]);
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Asistencia');
-        }
-        
-        // Agregar nuevo registro
-        datosExistentes.push(registro);
-        
-        // Convertir a hoja de cálculo
-        const nuevaWorksheet = XLSX.utils.json_to_sheet(datosExistentes);
-        
-        // Actualizar workbook
-        workbook.Sheets[workbook.SheetNames[0]] = nuevaWorksheet;
-        
-        // Guardar archivo (esto normalmente requeriría un backend)
-        // En un entorno real, esto se haría con una petición al servidor
-        console.log('Registro de asistencia:', registro);
-        
-        // Simular guardado exitoso
-        return true;
-        
-    } catch (error) {
-        console.error('Error al guardar asistencia:', error);
-        throw error;
-    }
 }
 
 // Función para mostrar mensaje
@@ -280,8 +252,14 @@ function ocultarMensaje() {
 function mostrarFotoEstudiante(codigoEstudiante) {
     const fotoDiv = document.getElementById('foto-estudiante');
     if (fotoDiv) {
+        // Ruta relativa a la carpeta de fotos
         fotoDiv.src = `fotos/${codigoEstudiante}.jpg`;
         fotoDiv.style.display = 'block';
+        
+        // Manejar error si la imagen no existe
+        fotoDiv.onerror = function() {
+            this.style.display = 'none';
+        };
     }
 }
 
@@ -296,11 +274,17 @@ function ocultarFoto() {
 // Función para crear teclado numérico
 function crearTecladoNumerico() {
     const teclado = document.getElementById('teclado-numerico');
-    if (!teclado) return;
+    if (!teclado) {
+        console.error('No se encontró el elemento teclado-numerico');
+        return;
+    }
+    
+    // Limpiar teclado existente
+    teclado.innerHTML = '';
     
     // Crear botones del 1 al 9
     for (let i = 1; i <= 9; i++) {
-        const boton = document.createElement('div');
+        const boton = document.createElement('button');
         boton.className = 'tecla';
         boton.textContent = i;
         boton.onclick = () => agregarNumero(i.toString());
@@ -308,46 +292,57 @@ function crearTecladoNumerico() {
     }
     
     // Botón de borrar
-    const botonBorrar = document.createElement('div');
+    const botonBorrar = document.createElement('button');
     botonBorrar.className = 'tecla tecla-borrar';
     botonBorrar.textContent = 'Borrar';
     botonBorrar.onclick = borrarCodigo;
     teclado.appendChild(botonBorrar);
     
     // Botón 0
-    const botonCero = document.createElement('div');
+    const botonCero = document.createElement('button');
     botonCero.className = 'tecla';
     botonCero.textContent = '0';
     botonCero.onclick = () => agregarNumero('0');
     teclado.appendChild(botonCero);
     
     // Botón de registrar
-    const botonRegistrar = document.createElement('div');
+    const botonRegistrar = document.createElement('button');
     botonRegistrar.className = 'tecla tecla-registrar';
     botonRegistrar.textContent = 'Registrar';
     botonRegistrar.onclick = registrarAsistencia;
     teclado.appendChild(botonRegistrar);
+    
+    console.log('Teclado numérico creado con éxito');
 }
 
 // Inicializar la página
 function inicializarPagina1() {
-    iniciarReloj();
-    cargarDatosExcel();
-    crearTecladoNumerico();
+    console.log('Inicializando página 1');
     
-    // Inicializar el display del código
+    // Iniciar componentes
+    iniciarReloj();
+    crearTecladoNumerico();
     actualizarDisplayCodigo();
+    
+    // Cargar datos después de un breve delay para asegurar que el DOM esté listo
+    setTimeout(() => {
+        cargarDatosExcel();
+    }, 100);
 }
 
-// Llamar a la inicialización cuando se cargue la página
+// Verificar si estamos en la página 1 y inicializar
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si estamos en la página 1
-    if (document.getElementById('content').innerHTML.includes('page-content')) {
-        inicializarPagina1();
-    }
+    // Esperar a que el contenido se cargue completamente
+    setTimeout(() => {
+        const contentDiv = document.getElementById('content');
+        if (contentDiv && contentDiv.querySelector('.page-content')) {
+            console.log('Página 1 detectada, inicializando...');
+            inicializarPagina1();
+        }
+    }, 500);
 });
 
 // Para cargar desde script.js
-if (typeof iniciarReloj === 'function') {
-    iniciarReloj();
+if (typeof window.iniciarReloj === 'function') {
+    window.iniciarReloj();
 }
