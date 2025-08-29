@@ -134,12 +134,15 @@ function llenarSelectorCursos() {
 // Función para agregar un número al código
 function agregarNumero(numero) {
     codigoIngresado += numero;
+    console.log("digito",codigoIngresado);
     actualizarDisplayCodigo();
+    
 }
 
 // Función para borrar el código
 function borrarCodigo() {
     codigoIngresado = '';
+    console.log("Borrar codigo","1");
     actualizarDisplayCodigo();
 }
 
@@ -149,12 +152,14 @@ function actualizarDisplayCodigo() {
     if (display) {
         display.textContent = codigoIngresado || '---';
     }
+    console.log("digitoactualizar","2");
 }
 
 // Función para registrar asistencia
 async function registrarAsistencia() {
     if (!cursoSeleccionado) {
         mostrarMensaje('Por favor, seleccione un curso primero.', 'error');
+        alert("1");
         return;
     }
     
@@ -163,6 +168,7 @@ async function registrarAsistencia() {
         return;
     }
     
+    console.log("Codigo ingresado",codigoIngresado);
     // Buscar estudiante
     const estudiante = estudiantes.find(e => e.CodigoEstudiante == codigoIngresado);
     
@@ -170,13 +176,19 @@ async function registrarAsistencia() {
         mostrarMensaje('Código de estudiante no encontrado.', 'error');
         return;
     }
-    
+
     // Obtener fecha y hora actual
     const ahora = new Date();
     const fechaMarca = ahora.toISOString().split('T')[0]; // Formato YYYY-MM-DD
     const horaMarca = ahora.toTimeString().split(' ')[0]; // Formato HH:MM:SS
-    
+    console.log("Hora1",ahora);
+    console.log("Hora2",fechaMarca);
+    console.log("Hora3",horaMarca);
     // Verificar si es tardanza
+
+
+
+
     const estado = calcularEstadoAsistencia(horaMarca, cursoSeleccionado.HoraInicio, 
                                           cursoSeleccionado.HoraTolerancia, cursoSeleccionado.HoraTardanza);
     
@@ -188,7 +200,9 @@ async function registrarAsistencia() {
         HoraMarca: horaMarca,
         NombreCurso: cursoSeleccionado.NombreCurso,
         Estado: estado
+
     };
+    console.log("Registro",registroAsistencia);
     
     // Mostrar mensaje de éxito
     mostrarMensaje(`¡Bienvenido ${estudiante.Nombres} ${estudiante.Apellidos}! (${estado})`, 'exito');
